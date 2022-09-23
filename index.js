@@ -19,10 +19,10 @@ const API_KEY = process.env.API_KEY;
 const getWeather = async (city) => {
   try {
     let result = await Axios.get(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}`);
-    console.log("Got the result",result.data)
+    console.log("Got the result", result.data)
     return result.data
   } catch (error) {
-    console.log("EROOR",error)
+    console.log("EROOR", error)
   }
 }
 
@@ -30,21 +30,36 @@ slackEvents.on('app_mention', (event) => {
   console.log(`Got message from user ${event.user}: ${event.text}`);
   (async () => {
     try {
-      await slackClient.chat.postMessage({ channel: event.channel, text: `Hello <@${event.user}>! :tada:` })
-      getWeather()
+
+      const greetArray = ['Hello', 'Hi', 'Hey'];
+      const greetText = event.text.split(' ')[0];
+      if (greetArray.includes(greetText)) {
+        await slackClient.chat.postMessage({
+          channel: event.channel,
+          text: `${greetText} <@${event.user}>! :tada:`
+        })
+      }
+
     } catch (error) {
       console.log(error.data)
     }
   })();
 });
 
-slackEvents.on('message', async (event)=>{
+slackEvents.on('message', async (event) => {
   console.log(`${event.text}`)
   const arr = event.text.split(' ')
-  if(arr[0]==='get' && arr[1]==='weather'){
+  if (arr[0] === 'get' && arr[1] === 'weather') {
     try {
       const w = await getWeather(arr[2])
-      await slackClient.chat.postMessage({ channel: event.channel, text: `desc:${w.weather[0].description},temp:${w.main.temp - 273}` })
+      await slackClient.chat.postMessage({
+        channel: event.channel,
+        text: `
+        City:${w.name},
+        Description:${w.weather[0].description},
+        Temperature:${(w.main.temp - 273).toFixed(2)}
+        `
+      })
     } catch (error) {
       console.log(error.data)
     }
